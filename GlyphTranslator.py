@@ -234,6 +234,7 @@ def audacity_to_glyphs(file: str, disableCompatibility: bool = False, watermarkP
 
     # Get the filename without extension of the input file
     filename = os.path.splitext(os.path.basename(file))[0]
+    output_file_path = os.path.dirname(file)
 
     # Define the stepsizes in ms
     TIME_STEP_SIZE = 16
@@ -246,7 +247,7 @@ def audacity_to_glyphs(file: str, disableCompatibility: bool = False, watermarkP
     author_data: list[list[int]] = [[0 for x in range(5)] for y in range(numLines)] if globalModeState == GlobalMode['Compatibility'] else [[0 for x in range(33)] for y in range(numLines)]
 
     # Generate AUTHOR data and write the CUSTOM1 file
-    with open(f"{filename}.glyphc1", "w") as authorFile:
+    with open(os.path.join(output_file_path, f"{filename}.glyphc1"), "w") as authorFile:
         for i, label in enumerate(labels):
             # Get values
             fromTime: int = get_divisable_by(round(label['from']), TIME_STEP_SIZE)
@@ -317,7 +318,7 @@ def audacity_to_glyphs(file: str, disableCompatibility: bool = False, watermarkP
         watermarkData = encode_watermark_from_file(watermarkPath, len(author_data[0]))
 
     # Write the AUTHOR file
-    with open(f"{filename}.glypha", "w", newline='') as authorFile:
+    with open(os.path.join(output_file_path, f"{filename}.glypha"), "w", newline='') as authorFile:
         csvWriter = csv.writer(authorFile, delimiter=',', lineterminator=',\r\n', strict=True)
         csvWriter.writerows(author_data)
         if watermarkPath:
@@ -350,6 +351,9 @@ def encode_watermark_from_file(watermarkPath: str, numColumns: int) -> list[list
     # Return the output
     return output
 
+def get_input_file_path(input_file_path):
+    output_file_path = os.path.abspath(input_file_path)
+    return output_file_path
 
 # +------------------------------------+
 # |                                    |
@@ -374,7 +378,7 @@ def main() -> int:
         printCriticalError(str(e))
 
     # Normal mode - convert Audacity Labels to Glyphs format
-    audacity_to_glyphs(args.FILE[0], args.disableCompatibility, args.watermark[0] if args.watermark is not None else None)
+    audacity_to_glyphs(get_input_file_path(args.FILE[0]), args.disableCompatibility, args.watermark[0] if args.watermark is not None else None)
 
     cprint("Done!", color="green", attrs=["bold"])
 
